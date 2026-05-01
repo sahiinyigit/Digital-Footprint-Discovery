@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: OSINT Intelligence Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: osint
+    description: OSINT scanning operations
+  - name: scans
+    description: Saved scan history
 paths:
   /healthz:
     get:
@@ -24,6 +28,103 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /osint/scan:
+    post:
+      operationId: startScan
+      tags: [osint]
+      summary: Start a full OSINT scan
+      description: Initiates a comprehensive OSINT scan for a domain or IP address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanRequest"
+      responses:
+        "200":
+          description: Scan results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanResult"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Scan error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /osint/scans:
+    get:
+      operationId: listScans
+      tags: [scans]
+      summary: List saved scans
+      description: Returns list of previously run scans
+      responses:
+        "200":
+          description: List of scans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SavedScan"
+
+  /osint/scans/{id}:
+    get:
+      operationId: getScan
+      tags: [scans]
+      summary: Get a saved scan by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Scan result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedScan"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteScan
+      tags: [scans]
+      summary: Delete a saved scan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +135,303 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    ScanRequest:
+      type: object
+      properties:
+        target:
+          type: string
+          description: Domain or IP address to scan
+        modules:
+          type: array
+          items:
+            type: string
+          description: Optional list of modules to run (dns, whois, shodan, subdomains, emails, blacklist, technologies)
+      required:
+        - target
+
+    DnsRecord:
+      type: object
+      properties:
+        type:
+          type: string
+        value:
+          type: string
+        ttl:
+          type: integer
+      required:
+        - type
+        - value
+
+    WhoisData:
+      type: object
+      properties:
+        registrar:
+          type: string
+        registrantOrg:
+          type: string
+        registrantCountry:
+          type: string
+        createdDate:
+          type: string
+        expiresDate:
+          type: string
+        updatedDate:
+          type: string
+        nameServers:
+          type: array
+          items:
+            type: string
+        status:
+          type: array
+          items:
+            type: string
+        emails:
+          type: array
+          items:
+            type: string
+      required: []
+
+    ShodanHost:
+      type: object
+      properties:
+        ip:
+          type: string
+        org:
+          type: string
+        isp:
+          type: string
+        country:
+          type: string
+        city:
+          type: string
+        os:
+          type: string
+        ports:
+          type: array
+          items:
+            type: integer
+        vulns:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        hostnames:
+          type: array
+          items:
+            type: string
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShodanService"
+        asn:
+          type: string
+        lastUpdate:
+          type: string
+      required: []
+
+    ShodanService:
+      type: object
+      properties:
+        port:
+          type: integer
+        transport:
+          type: string
+        product:
+          type: string
+        version:
+          type: string
+        banner:
+          type: string
+        cpe:
+          type: array
+          items:
+            type: string
+      required:
+        - port
+
+    EmailResult:
+      type: object
+      properties:
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        position:
+          type: string
+        department:
+          type: string
+        confidence:
+          type: integer
+        sources:
+          type: array
+          items:
+            type: string
+        linkedin:
+          type: string
+      required:
+        - email
+
+    SubdomainResult:
+      type: object
+      properties:
+        subdomain:
+          type: string
+        ip:
+          type: string
+        status:
+          type: integer
+        title:
+          type: string
+      required:
+        - subdomain
+
+    BlacklistResult:
+      type: object
+      properties:
+        listed:
+          type: boolean
+        listCount:
+          type: integer
+        lists:
+          type: array
+          items:
+            type: string
+        details:
+          type: string
+      required:
+        - listed
+
+    TechnologyResult:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        version:
+          type: string
+        confidence:
+          type: integer
+        website:
+          type: string
+      required:
+        - name
+
+    IpNetblockResult:
+      type: object
+      properties:
+        ip:
+          type: string
+        netblock:
+          type: string
+        asn:
+          type: string
+        asnName:
+          type: string
+        country:
+          type: string
+        org:
+          type: string
+      required: []
+
+    ScanResult:
+      type: object
+      properties:
+        target:
+          type: string
+        scanType:
+          type: string
+          enum: [domain, ip]
+        timestamp:
+          type: string
+        dns:
+          type: array
+          items:
+            $ref: "#/components/schemas/DnsRecord"
+        whois:
+          $ref: "#/components/schemas/WhoisData"
+        shodan:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShodanHost"
+        subdomains:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubdomainResult"
+        emails:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailResult"
+        emailStats:
+          type: object
+          properties:
+            total:
+              type: integer
+            pattern:
+              type: string
+            organization:
+              type: string
+          required: []
+        blacklist:
+          $ref: "#/components/schemas/BlacklistResult"
+        technologies:
+          type: array
+          items:
+            $ref: "#/components/schemas/TechnologyResult"
+        ipNetblocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/IpNetblockResult"
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - target
+        - scanType
+        - timestamp
+
+    SavedScan:
+      type: object
+      properties:
+        id:
+          type: integer
+        target:
+          type: string
+        scanType:
+          type: string
+        timestamp:
+          type: string
+        result:
+          $ref: "#/components/schemas/ScanResult"
+      required:
+        - id
+        - target
+        - scanType
+        - timestamp
+        - result
