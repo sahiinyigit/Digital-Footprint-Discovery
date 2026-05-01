@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://digital-footprint-discovery.onrender.com.onrender.com/api/:path*"
+      "destination": "https://digital-footprint-discovery.onrender.com/api/:path*"
     }
   ]
 }
