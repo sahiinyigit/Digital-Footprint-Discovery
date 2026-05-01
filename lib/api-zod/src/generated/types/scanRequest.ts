@@ -7,8 +7,6 @@
  */
 
 export interface ScanRequest {
-  /** Domain or IP address to scan */
   target: string;
-  /** Optional list of modules to run (dns, whois, shodan, subdomains, emails, blacklist, technologies) */
   modules?: string[];
 }

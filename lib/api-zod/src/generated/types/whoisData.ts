@@ -10,10 +10,14 @@ export interface WhoisData {
   registrar?: string;
   registrantOrg?: string;
   registrantCountry?: string;
+  registrantName?: string;
+  registrantEmail?: string;
+  registrantPhone?: string;
   createdDate?: string;
   expiresDate?: string;
   updatedDate?: string;
   nameServers?: string[];
   status?: string[];
   emails?: string[];
+  rawText?: string;
 }

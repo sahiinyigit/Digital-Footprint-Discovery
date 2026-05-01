@@ -110,9 +110,9 @@ export function History() {
                     <TableCell className="font-mono font-medium">
                       <div className="flex items-center gap-2">
                         {scan.scanType === 'domain' ? (
-                          <Globe className="h-4 w-4 text-blue-500" />
+                          <Globe className="h-4 w-4 text-primary" />
                         ) : (
-                          <Server className="h-4 w-4 text-orange-500" />
+                          <Server className="h-4 w-4 text-warning" />
                         )}
                         {scan.target}
                       </div>

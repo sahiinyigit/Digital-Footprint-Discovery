@@ -6,10 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface BlacklistResult {
-  listed: boolean;
-  listCount?: number;
-  lists?: string[];
-  details?: string;
-  checkedIp?: string;
-}
+export type ThreatIntelResultPassiveDnsItem = {
+  hostname: string;
+  ip?: string;
+  first?: string;
+  last?: string;
+};

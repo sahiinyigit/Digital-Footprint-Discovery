@@ -20,7 +20,6 @@ paths:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -34,7 +33,6 @@ paths:
       operationId: startScan
       tags: [osint]
       summary: Start a full OSINT scan
-      description: Initiates a comprehensive OSINT scan for a domain or IP address
       requestBody:
         required: true
         content:
@@ -66,7 +64,6 @@ paths:
       operationId: listScans
       tags: [scans]
       summary: List saved scans
-      description: Returns list of previously run scans
       responses:
         "200":
           description: List of scans
@@ -160,12 +157,10 @@ components:
       properties:
         target:
           type: string
-          description: Domain or IP address to scan
         modules:
           type: array
           items:
             type: string
-          description: Optional list of modules to run (dns, whois, shodan, subdomains, emails, blacklist, technologies)
       required:
         - target
 
@@ -191,6 +186,12 @@ components:
           type: string
         registrantCountry:
           type: string
+        registrantName:
+          type: string
+        registrantEmail:
+          type: string
+        registrantPhone:
+          type: string
         createdDate:
           type: string
         expiresDate:
@@ -209,7 +210,33 @@ components:
           type: array
           items:
             type: string
+        rawText:
+          type: string
       required: []
+
+    ShodanService:
+      type: object
+      properties:
+        port:
+          type: integer
+        transport:
+          type: string
+        product:
+          type: string
+        version:
+          type: string
+        banner:
+          type: string
+        cpe:
+          type: array
+          items:
+            type: string
+        vulnIds:
+          type: array
+          items:
+            type: string
+      required:
+        - port
 
     ShodanHost:
       type: object
@@ -250,27 +277,11 @@ components:
           type: string
         lastUpdate:
           type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
       required: []
-
-    ShodanService:
-      type: object
-      properties:
-        port:
-          type: integer
-        transport:
-          type: string
-        product:
-          type: string
-        version:
-          type: string
-        banner:
-          type: string
-        cpe:
-          type: array
-          items:
-            type: string
-      required:
-        - port
 
     EmailResult:
       type: object
@@ -303,9 +314,7 @@ components:
           type: string
         ip:
           type: string
-        status:
-          type: integer
-        title:
+        source:
           type: string
       required:
         - subdomain
@@ -322,6 +331,8 @@ components:
           items:
             type: string
         details:
+          type: string
+        checkedIp:
           type: string
       required:
         - listed
@@ -357,6 +368,143 @@ components:
           type: string
         org:
           type: string
+      required: []
+
+    SslCertificate:
+      type: object
+      properties:
+        subject:
+          type: string
+        issuer:
+          type: string
+        validFrom:
+          type: string
+        validTo:
+          type: string
+        isExpired:
+          type: boolean
+        daysRemaining:
+          type: integer
+        sans:
+          type: array
+          items:
+            type: string
+        signatureAlgorithm:
+          type: string
+        serialNumber:
+          type: string
+        grade:
+          type: string
+        issues:
+          type: array
+          items:
+            type: string
+      required: []
+
+    SecurityHeader:
+      type: object
+      properties:
+        name:
+          type: string
+        present:
+          type: boolean
+        value:
+          type: string
+        severity:
+          type: string
+          enum: [ok, warning, critical, info]
+        description:
+          type: string
+      required:
+        - name
+        - present
+        - severity
+
+    SecurityHeadersResult:
+      type: object
+      properties:
+        grade:
+          type: string
+        score:
+          type: integer
+        headers:
+          type: array
+          items:
+            $ref: "#/components/schemas/SecurityHeader"
+        serverInfo:
+          type: string
+        redirectsToHttps:
+          type: boolean
+        finalUrl:
+          type: string
+      required: []
+
+    BreachResult:
+      type: object
+      properties:
+        name:
+          type: string
+        domain:
+          type: string
+        breachDate:
+          type: string
+        addedDate:
+          type: string
+        description:
+          type: string
+        dataClasses:
+          type: array
+          items:
+            type: string
+        isVerified:
+          type: boolean
+        isFabricated:
+          type: boolean
+        isSensitive:
+          type: boolean
+        pwCount:
+          type: integer
+        logoPath:
+          type: string
+      required:
+        - name
+
+    ThreatIntelResult:
+      type: object
+      properties:
+        riskScore:
+          type: number
+        maliciousCount:
+          type: integer
+        suspiciousCount:
+          type: integer
+        pulseCount:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        malwareFamilies:
+          type: array
+          items:
+            type: string
+        passiveDns:
+          type: array
+          items:
+            type: object
+            properties:
+              hostname:
+                type: string
+              ip:
+                type: string
+              first:
+                type: string
+              last:
+                type: string
+            required:
+              - hostname
+        reputationScore:
+          type: number
       required: []
 
     ScanResult:
@@ -407,6 +555,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/IpNetblockResult"
+        sslCertificate:
+          $ref: "#/components/schemas/SslCertificate"
+        securityHeaders:
+          $ref: "#/components/schemas/SecurityHeadersResult"
+        breaches:
+          type: array
+          items:
+            $ref: "#/components/schemas/BreachResult"
+        threatIntel:
+          $ref: "#/components/schemas/ThreatIntelResult"
         errors:
           type: object
           additionalProperties:

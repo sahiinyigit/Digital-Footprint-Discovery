@@ -11,6 +11,10 @@ import { findEmails } from "./emails.js";
 import { checkBlacklist } from "./blacklist.js";
 import { detectTechnologies } from "./technologies.js";
 import { getNetblocks } from "./netblocks.js";
+import { analyzeSsl } from "./ssl.js";
+import { analyzeSecurityHeaders } from "./securityheaders.js";
+import { checkBreaches } from "./breach.js";
+import { getThreatIntel } from "./threatintel.js";
 import type { ScanResult } from "./types.js";
 
 const router = Router();
@@ -18,6 +22,10 @@ const router = Router();
 function detectScanType(target: string): "domain" | "ip" {
   const clean = target.replace(/^https?:\/\//, "").split("/")[0].split(":")[0];
   return /^(\d{1,3}\.){3}\d{1,3}$/.test(clean) ? "ip" : "domain";
+}
+
+function cleanTarget(target: string): string {
+  return target.trim().replace(/^https?:\/\//, "").split("/")[0].split(":")[0].toLowerCase();
 }
 
 router.post("/scan", async (req, res) => {
@@ -28,16 +36,16 @@ router.post("/scan", async (req, res) => {
     return;
   }
 
-  const cleanTarget = target.trim();
-  const scanType = detectScanType(cleanTarget);
+  const normalizedTarget = cleanTarget(target);
+  const scanType = detectScanType(normalizedTarget);
   const timestamp = new Date().toISOString();
   const errors: Record<string, string> = {};
 
-  const runModule = (name: string) =>
-    !modules || modules.includes(name);
+  const runModule = (name: string) => !modules || modules.includes(name);
 
-  req.log.info({ target: cleanTarget, scanType }, "Starting OSINT scan");
+  req.log.info({ target: normalizedTarget, scanType }, "Starting OSINT scan");
 
+  // Run all modules concurrently
   const [
     dnsResult,
     whoisResult,
@@ -47,27 +55,37 @@ router.post("/scan", async (req, res) => {
     blacklistResult,
     techResult,
     netblockResult,
+    sslResult,
+    headersResult,
+    breachResult,
+    threatResult,
   ] = await Promise.allSettled([
-    runModule("dns") && scanType === "domain" ? lookupDns(cleanTarget) : Promise.resolve([]),
-    runModule("whois") && scanType === "domain" ? lookupWhois(cleanTarget) : Promise.resolve({}),
-    runModule("shodan") ? shodanScan(cleanTarget) : Promise.resolve([]),
-    runModule("subdomains") && scanType === "domain" ? findSubdomains(cleanTarget) : Promise.resolve([]),
-    runModule("emails") && scanType === "domain" ? findEmails(cleanTarget) : Promise.resolve({ emails: [], stats: {} }),
-    runModule("blacklist") ? checkBlacklist(cleanTarget) : Promise.resolve({ listed: false }),
-    runModule("technologies") && scanType === "domain" ? detectTechnologies(cleanTarget) : Promise.resolve([]),
-    runModule("netblocks") ? getNetblocks(cleanTarget) : Promise.resolve([]),
+    runModule("dns") && scanType === "domain" ? lookupDns(normalizedTarget) : Promise.resolve([]),
+    runModule("whois") ? lookupWhois(normalizedTarget) : Promise.resolve({}),
+    runModule("shodan") ? shodanScan(normalizedTarget) : Promise.resolve([]),
+    runModule("subdomains") && scanType === "domain" ? findSubdomains(normalizedTarget) : Promise.resolve([]),
+    runModule("emails") && scanType === "domain" ? findEmails(normalizedTarget) : Promise.resolve({ emails: [], stats: {} }),
+    runModule("blacklist") ? checkBlacklist(normalizedTarget) : Promise.resolve({ listed: false }),
+    runModule("technologies") && scanType === "domain" ? detectTechnologies(normalizedTarget) : Promise.resolve([]),
+    runModule("netblocks") ? getNetblocks(normalizedTarget) : Promise.resolve([]),
+    runModule("ssl") && scanType === "domain" ? analyzeSsl(normalizedTarget) : Promise.resolve({}),
+    runModule("securityHeaders") && scanType === "domain" ? analyzeSecurityHeaders(normalizedTarget) : Promise.resolve({}),
+    runModule("breaches") ? checkBreaches(normalizedTarget) : Promise.resolve([]),
+    runModule("threatIntel") ? getThreatIntel(normalizedTarget) : Promise.resolve({}),
   ]);
 
   const extractValue = <T>(result: PromiseSettledResult<T>, moduleName: string, fallback: T): T => {
     if (result.status === "fulfilled") return result.value;
-    errors[moduleName] = result.reason instanceof Error ? result.reason.message : "Unknown error";
+    const errMsg = result.reason instanceof Error ? result.reason.message : "Unknown error";
+    errors[moduleName] = errMsg;
+    logger.error({ module: moduleName, err: errMsg }, "Module failed");
     return fallback;
   };
 
   const emailData = extractValue(emailsResult, "emails", { emails: [], stats: {} });
 
   const scanResult: ScanResult = {
-    target: cleanTarget,
+    target: normalizedTarget,
     scanType,
     timestamp,
     dns: extractValue(dnsResult, "dns", []),
@@ -79,13 +97,17 @@ router.post("/scan", async (req, res) => {
     blacklist: extractValue(blacklistResult, "blacklist", { listed: false }),
     technologies: extractValue(techResult, "technologies", []),
     ipNetblocks: extractValue(netblockResult, "netblocks", []),
+    sslCertificate: extractValue(sslResult, "ssl", {}),
+    securityHeaders: extractValue(headersResult, "securityHeaders", {}),
+    breaches: extractValue(breachResult, "breaches", []),
+    threatIntel: extractValue(threatResult, "threatIntel", {}),
     errors: Object.keys(errors).length > 0 ? errors : undefined,
   };
 
   // Save to DB
   try {
     await db.insert(scansTable).values({
-      target: cleanTarget,
+      target: normalizedTarget,
       scanType,
       result: scanResult as unknown as Record<string, unknown>,
     });
@@ -93,7 +115,7 @@ router.post("/scan", async (req, res) => {
     logger.error({ err }, "Failed to save scan to DB");
   }
 
-  req.log.info({ target: cleanTarget, modules: Object.keys(errors) }, "Scan complete");
+  req.log.info({ target: normalizedTarget }, "Scan complete");
   res.json(scanResult);
 });
 
@@ -104,7 +126,6 @@ router.get("/scans", async (req, res) => {
     .orderBy(scansTable.timestamp)
     .limit(100);
 
-  // Return in descending order (newest first)
   res.json(scans.reverse().map(s => ({
     id: s.id,
     target: s.target,

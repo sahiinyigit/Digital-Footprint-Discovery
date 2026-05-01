@@ -8,7 +8,6 @@
 import * as zod from "zod";
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -16,17 +15,11 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
- * Initiates a comprehensive OSINT scan for a domain or IP address
  * @summary Start a full OSINT scan
  */
 export const StartScanBody = zod.object({
-  target: zod.string().describe("Domain or IP address to scan"),
-  modules: zod
-    .array(zod.string())
-    .optional()
-    .describe(
-      "Optional list of modules to run (dns, whois, shodan, subdomains, emails, blacklist, technologies)",
-    ),
+  target: zod.string(),
+  modules: zod.array(zod.string()).optional(),
 });
 
 export const StartScanResponse = zod.object({
@@ -47,12 +40,16 @@ export const StartScanResponse = zod.object({
       registrar: zod.string().optional(),
       registrantOrg: zod.string().optional(),
       registrantCountry: zod.string().optional(),
+      registrantName: zod.string().optional(),
+      registrantEmail: zod.string().optional(),
+      registrantPhone: zod.string().optional(),
       createdDate: zod.string().optional(),
       expiresDate: zod.string().optional(),
       updatedDate: zod.string().optional(),
       nameServers: zod.array(zod.string()).optional(),
       status: zod.array(zod.string()).optional(),
       emails: zod.array(zod.string()).optional(),
+      rawText: zod.string().optional(),
     })
     .optional(),
   shodan: zod
@@ -77,11 +74,14 @@ export const StartScanResponse = zod.object({
               version: zod.string().optional(),
               banner: zod.string().optional(),
               cpe: zod.array(zod.string()).optional(),
+              vulnIds: zod.array(zod.string()).optional(),
             }),
           )
           .optional(),
         asn: zod.string().optional(),
         lastUpdate: zod.string().optional(),
+        latitude: zod.number().optional(),
+        longitude: zod.number().optional(),
       }),
     )
     .optional(),
@@ -90,8 +90,7 @@ export const StartScanResponse = zod.object({
       zod.object({
         subdomain: zod.string(),
         ip: zod.string().optional(),
-        status: zod.number().optional(),
-        title: zod.string().optional(),
+        source: zod.string().optional(),
       }),
     )
     .optional(),
@@ -122,6 +121,7 @@ export const StartScanResponse = zod.object({
       listCount: zod.number().optional(),
       lists: zod.array(zod.string()).optional(),
       details: zod.string().optional(),
+      checkedIp: zod.string().optional(),
     })
     .optional(),
   technologies: zod
@@ -147,11 +147,83 @@ export const StartScanResponse = zod.object({
       }),
     )
     .optional(),
+  sslCertificate: zod
+    .object({
+      subject: zod.string().optional(),
+      issuer: zod.string().optional(),
+      validFrom: zod.string().optional(),
+      validTo: zod.string().optional(),
+      isExpired: zod.boolean().optional(),
+      daysRemaining: zod.number().optional(),
+      sans: zod.array(zod.string()).optional(),
+      signatureAlgorithm: zod.string().optional(),
+      serialNumber: zod.string().optional(),
+      grade: zod.string().optional(),
+      issues: zod.array(zod.string()).optional(),
+    })
+    .optional(),
+  securityHeaders: zod
+    .object({
+      grade: zod.string().optional(),
+      score: zod.number().optional(),
+      headers: zod
+        .array(
+          zod.object({
+            name: zod.string(),
+            present: zod.boolean(),
+            value: zod.string().optional(),
+            severity: zod.enum(["ok", "warning", "critical", "info"]),
+            description: zod.string().optional(),
+          }),
+        )
+        .optional(),
+      serverInfo: zod.string().optional(),
+      redirectsToHttps: zod.boolean().optional(),
+      finalUrl: zod.string().optional(),
+    })
+    .optional(),
+  breaches: zod
+    .array(
+      zod.object({
+        name: zod.string(),
+        domain: zod.string().optional(),
+        breachDate: zod.string().optional(),
+        addedDate: zod.string().optional(),
+        description: zod.string().optional(),
+        dataClasses: zod.array(zod.string()).optional(),
+        isVerified: zod.boolean().optional(),
+        isFabricated: zod.boolean().optional(),
+        isSensitive: zod.boolean().optional(),
+        pwCount: zod.number().optional(),
+        logoPath: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  threatIntel: zod
+    .object({
+      riskScore: zod.number().optional(),
+      maliciousCount: zod.number().optional(),
+      suspiciousCount: zod.number().optional(),
+      pulseCount: zod.number().optional(),
+      tags: zod.array(zod.string()).optional(),
+      malwareFamilies: zod.array(zod.string()).optional(),
+      passiveDns: zod
+        .array(
+          zod.object({
+            hostname: zod.string(),
+            ip: zod.string().optional(),
+            first: zod.string().optional(),
+            last: zod.string().optional(),
+          }),
+        )
+        .optional(),
+      reputationScore: zod.number().optional(),
+    })
+    .optional(),
   errors: zod.record(zod.string(), zod.string()).optional(),
 });
 
 /**
- * Returns list of previously run scans
  * @summary List saved scans
  */
 export const ListScansResponseItem = zod.object({
@@ -177,12 +249,16 @@ export const ListScansResponseItem = zod.object({
         registrar: zod.string().optional(),
         registrantOrg: zod.string().optional(),
         registrantCountry: zod.string().optional(),
+        registrantName: zod.string().optional(),
+        registrantEmail: zod.string().optional(),
+        registrantPhone: zod.string().optional(),
         createdDate: zod.string().optional(),
         expiresDate: zod.string().optional(),
         updatedDate: zod.string().optional(),
         nameServers: zod.array(zod.string()).optional(),
         status: zod.array(zod.string()).optional(),
         emails: zod.array(zod.string()).optional(),
+        rawText: zod.string().optional(),
       })
       .optional(),
     shodan: zod
@@ -207,11 +283,14 @@ export const ListScansResponseItem = zod.object({
                 version: zod.string().optional(),
                 banner: zod.string().optional(),
                 cpe: zod.array(zod.string()).optional(),
+                vulnIds: zod.array(zod.string()).optional(),
               }),
             )
             .optional(),
           asn: zod.string().optional(),
           lastUpdate: zod.string().optional(),
+          latitude: zod.number().optional(),
+          longitude: zod.number().optional(),
         }),
       )
       .optional(),
@@ -220,8 +299,7 @@ export const ListScansResponseItem = zod.object({
         zod.object({
           subdomain: zod.string(),
           ip: zod.string().optional(),
-          status: zod.number().optional(),
-          title: zod.string().optional(),
+          source: zod.string().optional(),
         }),
       )
       .optional(),
@@ -252,6 +330,7 @@ export const ListScansResponseItem = zod.object({
         listCount: zod.number().optional(),
         lists: zod.array(zod.string()).optional(),
         details: zod.string().optional(),
+        checkedIp: zod.string().optional(),
       })
       .optional(),
     technologies: zod
@@ -276,6 +355,79 @@ export const ListScansResponseItem = zod.object({
           org: zod.string().optional(),
         }),
       )
+      .optional(),
+    sslCertificate: zod
+      .object({
+        subject: zod.string().optional(),
+        issuer: zod.string().optional(),
+        validFrom: zod.string().optional(),
+        validTo: zod.string().optional(),
+        isExpired: zod.boolean().optional(),
+        daysRemaining: zod.number().optional(),
+        sans: zod.array(zod.string()).optional(),
+        signatureAlgorithm: zod.string().optional(),
+        serialNumber: zod.string().optional(),
+        grade: zod.string().optional(),
+        issues: zod.array(zod.string()).optional(),
+      })
+      .optional(),
+    securityHeaders: zod
+      .object({
+        grade: zod.string().optional(),
+        score: zod.number().optional(),
+        headers: zod
+          .array(
+            zod.object({
+              name: zod.string(),
+              present: zod.boolean(),
+              value: zod.string().optional(),
+              severity: zod.enum(["ok", "warning", "critical", "info"]),
+              description: zod.string().optional(),
+            }),
+          )
+          .optional(),
+        serverInfo: zod.string().optional(),
+        redirectsToHttps: zod.boolean().optional(),
+        finalUrl: zod.string().optional(),
+      })
+      .optional(),
+    breaches: zod
+      .array(
+        zod.object({
+          name: zod.string(),
+          domain: zod.string().optional(),
+          breachDate: zod.string().optional(),
+          addedDate: zod.string().optional(),
+          description: zod.string().optional(),
+          dataClasses: zod.array(zod.string()).optional(),
+          isVerified: zod.boolean().optional(),
+          isFabricated: zod.boolean().optional(),
+          isSensitive: zod.boolean().optional(),
+          pwCount: zod.number().optional(),
+          logoPath: zod.string().optional(),
+        }),
+      )
+      .optional(),
+    threatIntel: zod
+      .object({
+        riskScore: zod.number().optional(),
+        maliciousCount: zod.number().optional(),
+        suspiciousCount: zod.number().optional(),
+        pulseCount: zod.number().optional(),
+        tags: zod.array(zod.string()).optional(),
+        malwareFamilies: zod.array(zod.string()).optional(),
+        passiveDns: zod
+          .array(
+            zod.object({
+              hostname: zod.string(),
+              ip: zod.string().optional(),
+              first: zod.string().optional(),
+              last: zod.string().optional(),
+            }),
+          )
+          .optional(),
+        reputationScore: zod.number().optional(),
+      })
       .optional(),
     errors: zod.record(zod.string(), zod.string()).optional(),
   }),
@@ -312,12 +464,16 @@ export const GetScanResponse = zod.object({
         registrar: zod.string().optional(),
         registrantOrg: zod.string().optional(),
         registrantCountry: zod.string().optional(),
+        registrantName: zod.string().optional(),
+        registrantEmail: zod.string().optional(),
+        registrantPhone: zod.string().optional(),
         createdDate: zod.string().optional(),
         expiresDate: zod.string().optional(),
         updatedDate: zod.string().optional(),
         nameServers: zod.array(zod.string()).optional(),
         status: zod.array(zod.string()).optional(),
         emails: zod.array(zod.string()).optional(),
+        rawText: zod.string().optional(),
       })
       .optional(),
     shodan: zod
@@ -342,11 +498,14 @@ export const GetScanResponse = zod.object({
                 version: zod.string().optional(),
                 banner: zod.string().optional(),
                 cpe: zod.array(zod.string()).optional(),
+                vulnIds: zod.array(zod.string()).optional(),
               }),
             )
             .optional(),
           asn: zod.string().optional(),
           lastUpdate: zod.string().optional(),
+          latitude: zod.number().optional(),
+          longitude: zod.number().optional(),
         }),
       )
       .optional(),
@@ -355,8 +514,7 @@ export const GetScanResponse = zod.object({
         zod.object({
           subdomain: zod.string(),
           ip: zod.string().optional(),
-          status: zod.number().optional(),
-          title: zod.string().optional(),
+          source: zod.string().optional(),
         }),
       )
       .optional(),
@@ -387,6 +545,7 @@ export const GetScanResponse = zod.object({
         listCount: zod.number().optional(),
         lists: zod.array(zod.string()).optional(),
         details: zod.string().optional(),
+        checkedIp: zod.string().optional(),
       })
       .optional(),
     technologies: zod
@@ -411,6 +570,79 @@ export const GetScanResponse = zod.object({
           org: zod.string().optional(),
         }),
       )
+      .optional(),
+    sslCertificate: zod
+      .object({
+        subject: zod.string().optional(),
+        issuer: zod.string().optional(),
+        validFrom: zod.string().optional(),
+        validTo: zod.string().optional(),
+        isExpired: zod.boolean().optional(),
+        daysRemaining: zod.number().optional(),
+        sans: zod.array(zod.string()).optional(),
+        signatureAlgorithm: zod.string().optional(),
+        serialNumber: zod.string().optional(),
+        grade: zod.string().optional(),
+        issues: zod.array(zod.string()).optional(),
+      })
+      .optional(),
+    securityHeaders: zod
+      .object({
+        grade: zod.string().optional(),
+        score: zod.number().optional(),
+        headers: zod
+          .array(
+            zod.object({
+              name: zod.string(),
+              present: zod.boolean(),
+              value: zod.string().optional(),
+              severity: zod.enum(["ok", "warning", "critical", "info"]),
+              description: zod.string().optional(),
+            }),
+          )
+          .optional(),
+        serverInfo: zod.string().optional(),
+        redirectsToHttps: zod.boolean().optional(),
+        finalUrl: zod.string().optional(),
+      })
+      .optional(),
+    breaches: zod
+      .array(
+        zod.object({
+          name: zod.string(),
+          domain: zod.string().optional(),
+          breachDate: zod.string().optional(),
+          addedDate: zod.string().optional(),
+          description: zod.string().optional(),
+          dataClasses: zod.array(zod.string()).optional(),
+          isVerified: zod.boolean().optional(),
+          isFabricated: zod.boolean().optional(),
+          isSensitive: zod.boolean().optional(),
+          pwCount: zod.number().optional(),
+          logoPath: zod.string().optional(),
+        }),
+      )
+      .optional(),
+    threatIntel: zod
+      .object({
+        riskScore: zod.number().optional(),
+        maliciousCount: zod.number().optional(),
+        suspiciousCount: zod.number().optional(),
+        pulseCount: zod.number().optional(),
+        tags: zod.array(zod.string()).optional(),
+        malwareFamilies: zod.array(zod.string()).optional(),
+        passiveDns: zod
+          .array(
+            zod.object({
+              hostname: zod.string(),
+              ip: zod.string().optional(),
+              first: zod.string().optional(),
+              last: zod.string().optional(),
+            }),
+          )
+          .optional(),
+        reputationScore: zod.number().optional(),
+      })
       .optional(),
     errors: zod.record(zod.string(), zod.string()).optional(),
   }),

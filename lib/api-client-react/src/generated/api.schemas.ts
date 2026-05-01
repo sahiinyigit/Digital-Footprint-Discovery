@@ -20,9 +20,7 @@ export interface SuccessResponse {
 }
 
 export interface ScanRequest {
-  /** Domain or IP address to scan */
   target: string;
-  /** Optional list of modules to run (dns, whois, shodan, subdomains, emails, blacklist, technologies) */
   modules?: string[];
 }
 
@@ -36,12 +34,16 @@ export interface WhoisData {
   registrar?: string;
   registrantOrg?: string;
   registrantCountry?: string;
+  registrantName?: string;
+  registrantEmail?: string;
+  registrantPhone?: string;
   createdDate?: string;
   expiresDate?: string;
   updatedDate?: string;
   nameServers?: string[];
   status?: string[];
   emails?: string[];
+  rawText?: string;
 }
 
 export interface ShodanService {
@@ -51,6 +53,7 @@ export interface ShodanService {
   version?: string;
   banner?: string;
   cpe?: string[];
+  vulnIds?: string[];
 }
 
 export interface ShodanHost {
@@ -67,6 +70,8 @@ export interface ShodanHost {
   services?: ShodanService[];
   asn?: string;
   lastUpdate?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface EmailResult {
@@ -83,8 +88,7 @@ export interface EmailResult {
 export interface SubdomainResult {
   subdomain: string;
   ip?: string;
-  status?: number;
-  title?: string;
+  source?: string;
 }
 
 export interface BlacklistResult {
@@ -92,6 +96,7 @@ export interface BlacklistResult {
   listCount?: number;
   lists?: string[];
   details?: string;
+  checkedIp?: string;
 }
 
 export interface TechnologyResult {
@@ -109,6 +114,79 @@ export interface IpNetblockResult {
   asnName?: string;
   country?: string;
   org?: string;
+}
+
+export interface SslCertificate {
+  subject?: string;
+  issuer?: string;
+  validFrom?: string;
+  validTo?: string;
+  isExpired?: boolean;
+  daysRemaining?: number;
+  sans?: string[];
+  signatureAlgorithm?: string;
+  serialNumber?: string;
+  grade?: string;
+  issues?: string[];
+}
+
+export type SecurityHeaderSeverity =
+  (typeof SecurityHeaderSeverity)[keyof typeof SecurityHeaderSeverity];
+
+export const SecurityHeaderSeverity = {
+  ok: "ok",
+  warning: "warning",
+  critical: "critical",
+  info: "info",
+} as const;
+
+export interface SecurityHeader {
+  name: string;
+  present: boolean;
+  value?: string;
+  severity: SecurityHeaderSeverity;
+  description?: string;
+}
+
+export interface SecurityHeadersResult {
+  grade?: string;
+  score?: number;
+  headers?: SecurityHeader[];
+  serverInfo?: string;
+  redirectsToHttps?: boolean;
+  finalUrl?: string;
+}
+
+export interface BreachResult {
+  name: string;
+  domain?: string;
+  breachDate?: string;
+  addedDate?: string;
+  description?: string;
+  dataClasses?: string[];
+  isVerified?: boolean;
+  isFabricated?: boolean;
+  isSensitive?: boolean;
+  pwCount?: number;
+  logoPath?: string;
+}
+
+export type ThreatIntelResultPassiveDnsItem = {
+  hostname: string;
+  ip?: string;
+  first?: string;
+  last?: string;
+};
+
+export interface ThreatIntelResult {
+  riskScore?: number;
+  maliciousCount?: number;
+  suspiciousCount?: number;
+  pulseCount?: number;
+  tags?: string[];
+  malwareFamilies?: string[];
+  passiveDns?: ThreatIntelResultPassiveDnsItem[];
+  reputationScore?: number;
 }
 
 export type ScanResultScanType =
@@ -140,6 +218,10 @@ export interface ScanResult {
   blacklist?: BlacklistResult;
   technologies?: TechnologyResult[];
   ipNetblocks?: IpNetblockResult[];
+  sslCertificate?: SslCertificate;
+  securityHeaders?: SecurityHeadersResult;
+  breaches?: BreachResult[];
+  threatIntel?: ThreatIntelResult;
   errors?: ScanResultErrors;
 }
 

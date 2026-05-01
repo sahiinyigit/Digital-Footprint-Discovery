@@ -8,12 +8,16 @@ export interface WhoisData {
   registrar?: string;
   registrantOrg?: string;
   registrantCountry?: string;
+  registrantName?: string;
+  registrantEmail?: string;
+  registrantPhone?: string;
   createdDate?: string;
   expiresDate?: string;
   updatedDate?: string;
   nameServers?: string[];
   status?: string[];
   emails?: string[];
+  rawText?: string;
 }
 
 export interface ShodanService {
@@ -23,6 +27,7 @@ export interface ShodanService {
   version?: string;
   banner?: string;
   cpe?: string[];
+  vulnIds?: string[];
 }
 
 export interface ShodanHost {
@@ -39,6 +44,8 @@ export interface ShodanHost {
   services?: ShodanService[];
   asn?: string;
   lastUpdate?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface EmailResult {
@@ -61,8 +68,7 @@ export interface EmailStats {
 export interface SubdomainResult {
   subdomain: string;
   ip?: string;
-  status?: number;
-  title?: string;
+  source?: string;
 }
 
 export interface BlacklistResult {
@@ -70,6 +76,7 @@ export interface BlacklistResult {
   listCount?: number;
   lists?: string[];
   details?: string;
+  checkedIp?: string;
 }
 
 export interface TechnologyResult {
@@ -89,6 +96,69 @@ export interface IpNetblockResult {
   org?: string;
 }
 
+export interface SslCertificate {
+  subject?: string;
+  issuer?: string;
+  validFrom?: string;
+  validTo?: string;
+  isExpired?: boolean;
+  daysRemaining?: number;
+  sans?: string[];
+  signatureAlgorithm?: string;
+  serialNumber?: string;
+  grade?: string;
+  issues?: string[];
+}
+
+export interface SecurityHeader {
+  name: string;
+  present: boolean;
+  value?: string;
+  severity: "ok" | "warning" | "critical" | "info";
+  description?: string;
+}
+
+export interface SecurityHeadersResult {
+  grade?: string;
+  score?: number;
+  headers?: SecurityHeader[];
+  serverInfo?: string;
+  redirectsToHttps?: boolean;
+  finalUrl?: string;
+}
+
+export interface BreachResult {
+  name: string;
+  domain?: string;
+  breachDate?: string;
+  addedDate?: string;
+  description?: string;
+  dataClasses?: string[];
+  isVerified?: boolean;
+  isFabricated?: boolean;
+  isSensitive?: boolean;
+  pwCount?: number;
+  logoPath?: string;
+}
+
+export interface PassiveDnsEntry {
+  hostname: string;
+  ip?: string;
+  first?: string;
+  last?: string;
+}
+
+export interface ThreatIntelResult {
+  riskScore?: number;
+  maliciousCount?: number;
+  suspiciousCount?: number;
+  pulseCount?: number;
+  tags?: string[];
+  malwareFamilies?: string[];
+  passiveDns?: PassiveDnsEntry[];
+  reputationScore?: number;
+}
+
 export interface ScanResult {
   target: string;
   scanType: "domain" | "ip";
@@ -102,5 +172,9 @@ export interface ScanResult {
   blacklist?: BlacklistResult;
   technologies?: TechnologyResult[];
   ipNetblocks?: IpNetblockResult[];
+  sslCertificate?: SslCertificate;
+  securityHeaders?: SecurityHeadersResult;
+  breaches?: BreachResult[];
+  threatIntel?: ThreatIntelResult;
   errors?: Record<string, string>;
 }

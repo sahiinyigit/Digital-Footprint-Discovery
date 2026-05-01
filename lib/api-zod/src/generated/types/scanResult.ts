@@ -6,15 +6,19 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BlacklistResult } from "./blacklistResult";
+import type { BreachResult } from "./breachResult";
 import type { DnsRecord } from "./dnsRecord";
 import type { EmailResult } from "./emailResult";
 import type { IpNetblockResult } from "./ipNetblockResult";
 import type { ScanResultEmailStats } from "./scanResultEmailStats";
 import type { ScanResultErrors } from "./scanResultErrors";
 import type { ScanResultScanType } from "./scanResultScanType";
+import type { SecurityHeadersResult } from "./securityHeadersResult";
 import type { ShodanHost } from "./shodanHost";
+import type { SslCertificate } from "./sslCertificate";
 import type { SubdomainResult } from "./subdomainResult";
 import type { TechnologyResult } from "./technologyResult";
+import type { ThreatIntelResult } from "./threatIntelResult";
 import type { WhoisData } from "./whoisData";
 
 export interface ScanResult {
@@ -30,5 +34,9 @@ export interface ScanResult {
   blacklist?: BlacklistResult;
   technologies?: TechnologyResult[];
   ipNetblocks?: IpNetblockResult[];
+  sslCertificate?: SslCertificate;
+  securityHeaders?: SecurityHeadersResult;
+  breaches?: BreachResult[];
+  threatIntel?: ThreatIntelResult;
   errors?: ScanResultErrors;
 }

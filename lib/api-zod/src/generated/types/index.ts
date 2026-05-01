@@ -7,6 +7,7 @@
  */
 
 export * from "./blacklistResult";
+export * from "./breachResult";
 export * from "./dnsRecord";
 export * from "./emailResult";
 export * from "./errorResponse";
@@ -18,9 +19,15 @@ export * from "./scanResult";
 export * from "./scanResultEmailStats";
 export * from "./scanResultErrors";
 export * from "./scanResultScanType";
+export * from "./securityHeader";
+export * from "./securityHeaderSeverity";
+export * from "./securityHeadersResult";
 export * from "./shodanHost";
 export * from "./shodanService";
+export * from "./sslCertificate";
 export * from "./subdomainResult";
 export * from "./successResponse";
 export * from "./technologyResult";
+export * from "./threatIntelResult";
+export * from "./threatIntelResultPassiveDnsItem";
 export * from "./whoisData";

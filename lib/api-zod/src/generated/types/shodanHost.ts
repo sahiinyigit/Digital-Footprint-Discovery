@@ -21,4 +21,6 @@ export interface ShodanHost {
   services?: ShodanService[];
   asn?: string;
   lastUpdate?: string;
+  latitude?: number;
+  longitude?: number;
 }

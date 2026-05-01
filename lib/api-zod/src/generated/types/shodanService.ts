@@ -13,4 +13,5 @@ export interface ShodanService {
   version?: string;
   banner?: string;
   cpe?: string[];
+  vulnIds?: string[];
 }

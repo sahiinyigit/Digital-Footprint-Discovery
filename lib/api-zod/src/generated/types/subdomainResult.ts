@@ -9,6 +9,5 @@
 export interface SubdomainResult {
   subdomain: string;
   ip?: string;
-  status?: number;
-  title?: string;
+  source?: string;
 }
