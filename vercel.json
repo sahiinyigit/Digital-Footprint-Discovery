@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/osint/:path*",
+      "destination": "https://digital-footprint-discovery.onrender.com/api/osint/:path*"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://digital-footprint-discovery.onrender.com/api/:path*"
     }
